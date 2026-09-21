@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="Matrica.Infrastructure/Metrica.Infrastructure.csproj" Id="b85857a3-9993-416f-b285-bb95924e4388" />
+  <Project Path="Metrica.Api/Metrica.Api.csproj" Id="00a8122a-34a1-4158-9bf6-73d598f87cb0" />
+  <Project Path="Metrica.Application/Metrica.Application.csproj" Id="7bc6dc54-8d8a-49b3-ba26-3a4e491b9aa6" />
+  <Project Path="Metrica.Domain/Metrica.Domain.csproj" Id="500fb15b-93fd-4f7e-ae7b-b12cf72c6a12" />
+  <Project Path="Metrica.Notifications.Worker/Metrica.Notifications.Worker.csproj" Id="eab83458-1ce6-411a-a231-a42ea8c9ef98" />
+  <Project Path="Metrica.Worker/Metrica.Worker.csproj" Id="868d27fc-5d83-47ab-b830-21021533ad0f" />
+</Solution>

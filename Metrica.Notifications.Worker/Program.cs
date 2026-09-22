@@ -9,9 +9,16 @@ using Metrica.Infrastructure.Persistence;
 using Metrica.Infrastructure.Persistence.Repositories;
 using Metrica.Notifications.Worker;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 var builder = Host.CreateApplicationBuilder(args);
 
+builder.Services.AddSerilog((services, configuration) =>
+{
+    configuration
+        .ReadFrom.Configuration(builder.Configuration)
+        .ReadFrom.Services(services);
+});
 
 var connectionString = builder.Configuration
     .GetConnectionString("DefaultConnection")

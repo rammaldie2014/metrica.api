@@ -13,9 +13,17 @@ using Metrica.Worker;
 using Metrica.Worker.Messaging;
 using Metrica.Worker.Notifications;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 
 var builder = Host.CreateApplicationBuilder(args);
+
+builder.Services.AddSerilog((services, configuration) =>
+{
+    configuration
+        .ReadFrom.Configuration(builder.Configuration)
+        .ReadFrom.Services(services);
+});
 
 var connectionString = builder.Configuration
     .GetConnectionString("DefaultConnection")

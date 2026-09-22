@@ -105,11 +105,10 @@ namespace Metrica.Infrastructure.Persistence.Repositories
                 return (Array.Empty<FileLoad>(), totalCount);
             }
 
-            var items = await query
-                .OrderByDescending(load => load.CreatedAt)
-                .ThenByDescending(load => load.Id)
-                .Skip((int)offset)
-                .Take(pageSize)
+            var items = await _context.FileLoads
+                .FromSqlInterpolated(
+                    $"EXEC dbo.sp_GetFileLoads @PageNumber={pageNumber}, @PageSize={pageSize}")
+                .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
             return (items, totalCount);

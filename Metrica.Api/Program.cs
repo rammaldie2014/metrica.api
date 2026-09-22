@@ -1,4 +1,5 @@
 using Metrica.Api.ExceptionHandling;
+using Metrica.Api.Extensions;
 using Metrica.Application.Commands.FileLoads.CreateFileLoad;
 using Metrica.Application.Excel;
 using Metrica.Application.Interfaces;
@@ -181,6 +182,8 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 var app = builder.Build();
+
+await app.ApplyDatabaseMigrationsAsync();
 
 app.UseSerilogRequestLogging();
 

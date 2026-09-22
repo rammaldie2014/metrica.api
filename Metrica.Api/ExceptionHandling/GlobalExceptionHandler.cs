@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
+﻿using Metrica.Application.Exceptions;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Metrica.Api.ExceptionHandling
@@ -20,25 +21,50 @@ namespace Metrica.Api.ExceptionHandling
         {
             var traceId = httpContext.TraceIdentifier;
 
-            _logger.LogError(
-                exception,
-                "Error no controlado en {Method} {Path}. TraceId: {TraceId}",
-                httpContext.Request.Method,
-                httpContext.Request.Path,
-                traceId);
-
-            var problem = new ProblemDetails
+            if (exception is FileLoadPeriodConflictException)
             {
-                Status = StatusCodes.Status500InternalServerError,
-                Title = "Ocurrió un error interno.",
-                Detail = "No se pudo completar la solicitud.",
-                Instance = httpContext.Request.Path.Value
+                _logger.LogWarning(
+                    exception,
+                    "Intento de carga para un periodo bloqueado en {Method} {Path}. " +
+                    "TraceId: {TraceId}",
+                    httpContext.Request.Method,
+                    httpContext.Request.Path,
+                    traceId);
+            }
+            else
+            {
+                _logger.LogError(
+                    exception,
+                    "Error no controlado en {Method} {Path}. TraceId: {TraceId}",
+                    httpContext.Request.Method,
+                    httpContext.Request.Path,
+                    traceId);
+            }
+
+            var problem = exception switch
+            {
+                FileLoadPeriodConflictException conflictException =>
+                    new ProblemDetails
+                    {
+                        Status = StatusCodes.Status409Conflict,
+                        Title = "El periodo no está disponible.",
+                        Detail = conflictException.Message,
+                        Instance = httpContext.Request.Path.Value
+                    },
+
+                _ => new ProblemDetails
+                {
+                    Status = StatusCodes.Status500InternalServerError,
+                    Title = "Ocurrió un error interno.",
+                    Detail = "No se pudo completar la solicitud.",
+                    Instance = httpContext.Request.Path.Value
+                }
             };
 
             problem.Extensions["traceId"] = traceId;
 
             httpContext.Response.StatusCode =
-                StatusCodes.Status500InternalServerError;
+                problem.Status ?? StatusCodes.Status500InternalServerError;
 
             await httpContext.Response.WriteAsJsonAsync(
                 problem,

@@ -15,7 +15,6 @@ namespace Metrica.Application.Interfaces.Repositories
 
         Task<bool> TryReservePeriodAsync(
             string period,
-            long fileLoadId,
             CancellationToken cancellationToken = default);
 
         Task<IReadOnlyList<long>> GetPendingNotificationIdsAsync(

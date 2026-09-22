@@ -1,10 +1,10 @@
 using Metrica.Api.ExceptionHandling;
 using Metrica.Application.Commands.FileLoads.CreateFileLoad;
+using Metrica.Application.Excel;
 using Metrica.Application.Interfaces;
 using Metrica.Application.Interfaces.Excel;
 using Metrica.Application.Interfaces.Messaging;
 using Metrica.Application.Interfaces.Repositories;
-using Metrica.Application.Interfaces.Storage;
 using Metrica.Application.Queries.FileLoads.GetFileLoadById;
 using Metrica.Application.Queries.FileLoads.GetFileLoadContent;
 using Metrica.Application.Queries.FileLoads.GetFileLoadErrors;
@@ -86,6 +86,10 @@ builder.Services.AddScoped<IFileLoadStatusHistoryRepository, FileLoadStatusHisto
 builder.Services.AddScoped<IProcessedProductRepository, ProcessedProductRepository>();
 builder.Services.AddScoped<IFileLoadErrorRepository, FileLoadErrorRepository>();
 builder.Services.AddScoped<IProductExcelReader, ProductExcelReader>();
+builder.Services.AddScoped<IFileLoadPeriodResolver, FileLoadPeriodResolver>();
+
+builder.Services.AddSeaweedFsStorage(
+    builder.Configuration);
 
 builder.Services.AddScoped<IUnitOfWork>(provider =>
     provider.GetRequiredService<MetricaDbContext>());
@@ -97,15 +101,6 @@ builder.Services.AddScoped<GetFileLoadStatusHistoryQueryHandler>();
 builder.Services.AddScoped<GetFileLoadProductsQueryHandler>();
 builder.Services.AddScoped<GetFileLoadErrorsQueryHandler>();
 builder.Services.AddScoped<GetFileLoadContentQueryHandler>();
-
-builder.Services
-    .AddOptions<FileStorageOptions>()
-    .Bind(builder.Configuration.GetSection(FileStorageOptions.SectionName))
-    .Validate(
-        options => !string.IsNullOrWhiteSpace(options.RootPath) &&
-                   Path.IsPathFullyQualified(options.RootPath),
-        "FileStorage:RootPath debe contener una ruta absoluta válida.")
-    .ValidateOnStart();
 
 builder.Services.AddControllers();
 
@@ -143,9 +138,6 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 });
 
 builder.Services.AddScoped<IFileProcessingOutbox, FileProcessingOutbox>();
-builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
-
-
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

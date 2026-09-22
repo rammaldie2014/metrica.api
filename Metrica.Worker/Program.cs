@@ -2,7 +2,6 @@ using Metrica.Application.Interfaces;
 using Metrica.Application.Interfaces.Excel;
 using Metrica.Application.Interfaces.Messaging;
 using Metrica.Application.Interfaces.Repositories;
-using Metrica.Application.Interfaces.Storage;
 using Metrica.Application.Messaging.Handlers;
 using Metrica.Infrastructure.Excel;
 using Metrica.Infrastructure.Messaging.RabbitMq;
@@ -49,16 +48,9 @@ builder.Services.AddSingleton<IFileProcessingPublisher, RabbitMqFileProcessingPu
 
 builder.Services.AddScoped<IFileProcessingOutboxDispatcher, FileProcessingOutboxDispatcher>();
 
-builder.Services
-    .AddOptions<FileStorageOptions>()
-    .Bind(builder.Configuration.GetSection(FileStorageOptions.SectionName))
-    .Validate(
-        options => !string.IsNullOrWhiteSpace(options.RootPath) &&
-                   Path.IsPathFullyQualified(options.RootPath),
-        "FileStorage:RootPath debe contener una ruta absoluta válida.")
-    .ValidateOnStart();
+builder.Services.AddSeaweedFsStorage(
+    builder.Configuration);
 
-builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
 builder.Services.AddScoped<IProductExcelReader, ProductExcelReader>();
 builder.Services.AddScoped<IFileLoadErrorRepository, FileLoadErrorRepository>();
 builder.Services.AddScoped<IProcessedProductRepository, ProcessedProductRepository>();

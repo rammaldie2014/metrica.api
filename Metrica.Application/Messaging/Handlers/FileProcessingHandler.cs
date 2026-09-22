@@ -1,4 +1,5 @@
-﻿using Metrica.Application.Interfaces;
+﻿using Metrica.Application.Excel;
+using Metrica.Application.Interfaces;
 using Metrica.Application.Interfaces.Excel;
 using Metrica.Application.Interfaces.Messaging;
 using Metrica.Application.Interfaces.Repositories;
@@ -183,20 +184,21 @@ namespace Metrica.Application.Messaging.Handlers
                             return;
                         }
 
-                        var periodReserved =
-                            await _fileLoadRepository.TryReservePeriodAsync(
-                                period,
-                                fileLoad.Id,
-                                cancellationToken);
-
-                        if(!periodReserved)
+                        if (fileLoad.Period is null)
+                        {
+                            fileLoad.AssignPeriod(period);
+                        }
+                        else if (!string.Equals(
+                            fileLoad.Period,
+                            period,
+                            StringComparison.OrdinalIgnoreCase))
                         {
                             await RejectFileLoadAsync(
                                 fileLoad,
-                                "PERIOD_BLOCKED",
-                                $"El periodo '{period}' ya tiene otra carga " +
-                                "activa o finalizada.",
-                                null,
+                                "PERIOD_MISMATCH",
+                                $"El periodo '{period}' del archivo no coincide " +
+                                $"con el periodo '{fileLoad.Period}' registrado en la carga.",
+                                row.RowNumber,
                                 cancellationToken);
 
                             return;
@@ -258,7 +260,15 @@ namespace Metrica.Application.Messaging.Handlers
                         return;
                     }
 
-                    if (row.ProductName.Length > 200)
+                    var productName = string.IsNullOrWhiteSpace(row.ProductName)
+                        ? ProductImportDefaultValues.ProductName
+                        : row.ProductName.Trim();
+
+                    var description = string.IsNullOrWhiteSpace(row.Description)
+                        ? ProductImportDefaultValues.Description
+                        : row.Description.Trim();
+
+                    if (productName.Length > 200)
                     {
                         await RejectFileLoadAsync(
                             fileLoad,
@@ -271,7 +281,7 @@ namespace Metrica.Application.Messaging.Handlers
                         return;
                     }
 
-                    if (row.Description.Length > 2000)
+                    if (description.Length > 2000)
                     {
                         await RejectFileLoadAsync(
                             fileLoad,
@@ -284,7 +294,7 @@ namespace Metrica.Application.Messaging.Handlers
                         return;
                     }
 
-                    decimal price = 0m;
+                    var price = ProductImportDefaultValues.Price;
 
                     if (!string.IsNullOrWhiteSpace(row.Price))
                     {
@@ -321,7 +331,7 @@ namespace Metrica.Application.Messaging.Handlers
                         }
                     }
 
-                    int stock = 0;
+                    var stock = ProductImportDefaultValues.Stock;
 
                     if (!string.IsNullOrWhiteSpace(row.Stock) &&
                         !int.TryParse(
@@ -345,8 +355,8 @@ namespace Metrica.Application.Messaging.Handlers
                                             fileLoadId: fileLoad.Id,
                                             period: period!,
                                             productCode: productCode,
-                                            productName: row.ProductName,
-                                            description: row.Description,
+                                            productName: productName,
+                                            description: description,
                                             price: price,
                                             stock: stock);
 

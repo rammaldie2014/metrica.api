@@ -1,4 +1,6 @@
 ﻿
+using System.Data;
+
 namespace Metrica.Application.Interfaces
 {
     public interface IUnitOfWork
@@ -8,6 +10,7 @@ namespace Metrica.Application.Interfaces
 
         Task ExecuteInTransactionAsync(
             Func<CancellationToken, Task> action,
+            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
             CancellationToken cancellationToken = default);
 
     }

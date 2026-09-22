@@ -35,60 +35,29 @@ namespace Metrica.Infrastructure.Persistence.Repositories
 
         public async Task<bool> TryReservePeriodAsync(
             string period,
-            long fileLoadId,
             CancellationToken cancellationToken = default)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(period);
-            period = period.Trim();
 
-            await using var transaction =
-                await _context.Database.BeginTransactionAsync(
-                    System.Data.IsolationLevel.Serializable,
-                    cancellationToken);
+            period = period.Trim();
 
             var blockingLoadExists = await _context.FileLoads
                 .FromSqlInterpolated($"""
-                                SELECT *
-                                FROM [FileLoads] WITH (UPDLOCK, HOLDLOCK)
-                                WHERE [Period] = {period}
-                                  AND [Id] <> {fileLoadId}
-                                  AND [Status] IN (
-                                      {FileLoadStatus.Pending.ToString()},
-                                      {FileLoadStatus.InProcess.ToString()},
-                                      {FileLoadStatus.Loaded.ToString()},
-                                      {FileLoadStatus.Finished.ToString()},
-                                      {FileLoadStatus.Notified.ToString()}
-                                  )
-                                """)
+            SELECT *
+            FROM [FileLoads] WITH (UPDLOCK, HOLDLOCK)
+            WHERE [Period] = {period}
+              AND [Status] IN (
+                  {FileLoadStatus.Pending.ToString()},
+                  {FileLoadStatus.InProcess.ToString()},
+                  {FileLoadStatus.Loaded.ToString()},
+                  {FileLoadStatus.Finished.ToString()},
+                  {FileLoadStatus.Notified.ToString()}
+              )
+            """)
+                .AsNoTracking()
                 .AnyAsync(cancellationToken);
 
-            if (blockingLoadExists)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                return false;
-            }
-
-            var affectedRows = await _context.FileLoads
-                .Where(load =>
-                    load.Id == fileLoadId &&
-                    (load.Period == null || load.Period == period) &&
-                    (load.Status == FileLoadStatus.Pending ||
-                     load.Status == FileLoadStatus.InProcess))
-                .ExecuteUpdateAsync(
-                    setters => setters.SetProperty(
-                        load => load.Period,
-                        period),
-                    cancellationToken);
-
-            if (affectedRows != 1)
-            {
-                throw new InvalidOperationException(
-                    $"No se pudo reservar el periodo para la carga {fileLoadId}.");
-            }
-
-            await transaction.CommitAsync(cancellationToken);
-
-            return true;
+            return !blockingLoadExists;
         }
 
         public async Task<IReadOnlyList<long>> GetPendingNotificationIdsAsync(

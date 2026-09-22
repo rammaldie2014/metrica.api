@@ -4,6 +4,7 @@ using Metrica.Infrastructure.Persistence.Outbox;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,12 +37,15 @@ namespace Metrica.Infrastructure.Persistence
 
         public async Task ExecuteInTransactionAsync(
             Func<CancellationToken, Task> action,
+            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(action);
 
             await using var transaction =
-                await Database.BeginTransactionAsync(cancellationToken);
+                await Database.BeginTransactionAsync(
+                    isolationLevel,
+                    cancellationToken);
 
             await action(cancellationToken);
 

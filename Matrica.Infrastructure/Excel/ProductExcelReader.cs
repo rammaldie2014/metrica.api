@@ -1,17 +1,21 @@
 ﻿using ExcelDataReader;
 using Metrica.Application.Dtos;
 using Metrica.Application.Interfaces.Excel;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
+
 using System.Text;
-using System.Threading.Tasks;
+
 
 namespace Metrica.Infrastructure.Excel
 {
     public sealed class ProductExcelReader : IProductExcelReader
     {
+
+        public ProductExcelReader()
+        {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        }
+
         public IEnumerable<ProductExcelRowDto> ReadRows(
             Stream content,
             CancellationToken cancellationToken = default)
